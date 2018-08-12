@@ -1,16 +1,12 @@
 import sys
-import htask
+import catboost_task
+import os
 
-
-def main(argv):
-    if len(argv) < 2:
-        print(f'usage: {argv[0]} <port> ')
-        exit(1)
-
-    port = argv[1]
-    t1 = htask.HTask(port=port)
-    print (f'start tasking on port {port}')
+def main():
+    port = os.getenv('WORKER_SOCKET_PORT', 5678)
+    t1 = catboost_task.catboostTask(port=port)
+    print ('start tasking on port {}'.format(port))
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()

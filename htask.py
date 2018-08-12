@@ -10,6 +10,7 @@ class HTask:
     def __init__(self, ip='127.0.0.1', port=5000):
 
         self.init_params = None
+        print('listening on: {}:{}...'.format(ip,port))
         self.socketIO = SocketIO(ip, port)
 
         self.socketIO.on('connect', self.on_connect)
@@ -39,11 +40,11 @@ class HTask:
         self.send_message('initialized',{'command': 'initialized'})
 
 
-    def on_start(self, *args): # TODO : why args here ?
+    def on_start(self, *dummy_args):
         print('on_start')
         self.send_message('started', {'command':'started'})
         input_msg = self.init_params['data']['input'][0]
-        print(f'input message: {input_msg}')
+        print('input message: {}'.format(input_msg))
 
 
     def on_stop(self):

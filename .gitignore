@@ -24,6 +24,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.dump
 MANIFEST
 
 # PyInstaller
@@ -103,3 +104,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# project spacific
+model_depth*
+catboost_info/

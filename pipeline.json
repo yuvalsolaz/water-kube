@@ -1,0 +1,34 @@
+{
+    "name": "water-kube",
+    "nodes": [
+        {
+            "nodeName": "a1",
+            "algorithmName": "green-alg",
+            "input": [
+                "#[0...10]",
+                "@flowInput.datasource1"
+            ]
+        },
+        {
+            "nodeName": "a2",
+            "algorithmName": "green-alg",
+            "input": [
+                "*@a1",
+                "@flowInput.datasource2"
+            ]
+        },
+        {
+            "nodeName": "b",
+            "algorithmName": "green-alg",
+            "input": [
+                "@a1",
+                "@a2"
+            ]
+        }
+    ],
+    "flowInput": {
+        "datasource1": "https://dasjdaskljdaklsjdalksdjl",
+        "datasource2": "https://dasjdaskljdaklsjdalksdjl",
+        "datasource3": "https://dasjdaskljdaklsjdalksdjl"
+    }
+}

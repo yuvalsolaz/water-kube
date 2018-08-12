@@ -33,6 +33,8 @@
 from catboost.datasets import titanic
 from catboost import CatBoostClassifier, Pool, cv
 from sklearn.model_selection import train_test_split
+import hyperopt
+
 from sklearn.metrics import accuracy_score
 
 import numpy as np
@@ -72,14 +74,17 @@ class catboostTask(HTask):
 
     # catboost internal functions :
 
-    # 1.1 Data Loading
+    # region 1.1 Data Loading
+
     def _data_loading(self):
         # The data for this tutorial can be obtained from [this page](https://www.kaggle.com/c/titanic/data)
         self.train_df, self.test_df = titanic()
         print(self.train_df.head())
 
+    # endregion
 
-    # 1.2 Data Preparation
+    # region 1.2 Data Preparation
+
     def _data_preperation(self):
         # ### 1.2 Feature Preparation
         # First of all let's check how many absent values do we have:
@@ -104,8 +109,10 @@ class catboostTask(HTask):
         print(self.X.dtypes)
         self.categorical_features_indices = np.where(self.X.dtypes != np.float)[0]
 
+    # endregion
 
-    # 1.3 Data Splitting
+    # region 1.3 Data Splitting
+
     def _data_splitting(self):
         # Let's split the train data into training and validation sets.
 
@@ -114,7 +121,9 @@ class catboostTask(HTask):
                                                                                             random_state=42)
         self.X_test = self.test_df
 
-    # 2.1 Model Training
+    # endregion
+
+    # region 2.1 Model Training
     # create the model itself:
     # We would go here with default parameters (as they provide a _really_ good baseline almost all the time),
     # the only thing We would like to specify here is `custom_loss` parameter,
@@ -128,3 +137,66 @@ class catboostTask(HTask):
                        eval_set=(self.X_validation, self.y_validation),
                        logging_level='Verbose',  # you can uncomment this for text output
                        plot=False);
+
+    # endregion
+
+    # region 2.2 Model Cross-Validation
+    def _model_cross_validation(self):
+        self.cv_data = cv(Pool(self.X, self.y, cat_features=self.categorical_features_indices),
+                     self.model.get_params(), plot=False)
+
+
+        # Now we have values of our loss functions at each boosting step averaged by 10 folds,
+        # which should provide us with a more accurate estimation of our model performance:
+        print('Best validation accuracy score: {:.2f}±{:.2f} on step {}'.format(
+              np.max(self.cv_data['test-Accuracy-mean']),
+                     self.cv_data['test-Accuracy-std'][np.argmax(self.cv_data['test-Accuracy-mean'])],
+                                                       np.argmax(self.cv_data['test-Accuracy-mean'])))
+
+        print('Precise validation accuracy score: {}'.format(np.max(self.cv_data['test-Accuracy-mean'])))
+
+    # endregion
+
+    # region 2.3 Model Applying / predictions
+
+    def _model_prediction(self):
+        self.predictions = model.predict(self.X_test)
+        self.predictions_probs = model.predict_proba(self.X_test)
+        print(self.predictions[:10])
+        print(self.predictions_probs[:10])
+
+    # endregion
+
+    # region 4.0 CatBoost parameters tuning
+
+    def _hyperopt_objective(params):
+        model = CatBoostClassifier(
+            l2_leaf_reg=int(params['l2_leaf_reg']),
+            learning_rate=params['learning_rate'],
+            iterations=500,
+            eval_metric='Accuracy',
+            random_seed=42,
+            logging_level='Silent' )
+
+        self.cv_data = cv(Pool(self.X, self.y, cat_features=self.categorical_features_indices),self.model.get_params())
+        self.best_accuracy = np.max(self.cv_data['test-Accuracy-mean'])
+        return 1 - best_accuracy  # as hyperopt minimises
+
+    def _model_optimizations(self):
+        # While you could always select optimal number of iterations (boosting steps) by cross-validation and learning curve plots,
+        # it is also important to play with some of model parameters,
+        # and we would like to pay some special attention to `l2_leaf_reg` and `learning_rate`.
+        # In this section, we'll select these parameters using the **`hyperopt`** package.
+        params_space = {'l2_leaf_reg': hyperopt.hp.qloguniform('l2_leaf_reg', 0, 2, 1),
+                        'learning_rate': hyperopt.hp.uniform('learning_rate', 1e-3, 5e-1), }
+
+        trials = hyperopt.Trials()
+
+        best = hyperopt.fmin(hyperopt_objective, space=params_space, algo=hyperopt.tpe.suggest, max_evals=50,
+                             trials=trials # rseed=123)
+
+        print(best)
+        print('Precise validation accuracy score: {}'.format(np.max(self.cv_data['test-Accuracy-mean'])))
+
+    # endregion
+

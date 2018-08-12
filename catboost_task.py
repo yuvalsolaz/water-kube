@@ -43,7 +43,7 @@ from htask import HTask
 
 class catboostTask(HTask):
 
-    # hkube functions :
+    # region hkube functions :
 
     def on_initialize(self, *args ):
         print('catboost task on_init')
@@ -71,8 +71,8 @@ class catboostTask(HTask):
     def on_done(self):
         print('done')
 
+    # endregion
 
-    # catboost internal functions :
 
     # region 1.1 Data Loading
 
@@ -183,7 +183,8 @@ class catboostTask(HTask):
         return 1 - best_accuracy  # as hyperopt minimises
 
     def _model_optimizations(self):
-        # While you could always select optimal number of iterations (boosting steps) by cross-validation and learning curve plots,
+        # While you could always select optimal number of iterations
+        # (boosting steps) by cross-validation and learning curve plots,
         # it is also important to play with some of model parameters,
         # and we would like to pay some special attention to `l2_leaf_reg` and `learning_rate`.
         # In this section, we'll select these parameters using the **`hyperopt`** package.
@@ -192,10 +193,10 @@ class catboostTask(HTask):
 
         trials = hyperopt.Trials()
 
-        best = hyperopt.fmin(hyperopt_objective, space=params_space, algo=hyperopt.tpe.suggest, max_evals=50,
-                             trials=trials # rseed=123)
+        self.best = hyperopt.fmin(hyperopt_objective, space=params_space, algo=hyperopt.tpe.suggest, max_evals=50,
+                             trials=trials)  # rseed=123)
 
-        print(best)
+        print(self.best)
         print('Precise validation accuracy score: {}'.format(np.max(self.cv_data['test-Accuracy-mean'])))
 
     # endregion

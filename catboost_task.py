@@ -47,11 +47,15 @@ class catboostTask(HTask):
 
     def on_initialize(self, *args ):
         print('catboost task on_init')
-        self.init_params = args[0]
-        self._data_loading(self)
-        self._data_preperation(self)
-        self._data_splitting(self)
+        if len(args) > 0:
+            self.init_params = args[0]
+            print ('init_parmas: {}'.format(self.init_params))
+        self._data_loading()
+        self._data_preperation()
+        self._data_splitting()
         self.send_message('initialized',{'command': 'initialized'})
+        print('ready to start')
+
 
 
     def on_start(self):
@@ -59,8 +63,7 @@ class catboostTask(HTask):
         print('on_start catboost')
 
         # run catboost cross validation with input args at self.input_msg
-        self._model_training(self)
-
+        self._model_training()
         self.send_message('done', {'command': 'done', 'data': {'output': 43}})
 
 
@@ -88,8 +91,8 @@ class catboostTask(HTask):
     def _data_preperation(self):
         # ### 1.2 Feature Preparation
         # First of all let's check how many absent values do we have:
-        self.null_value_stats = train_df.isnull().sum(axis=0)
-        self.null_value_stats[null_value_stats != 0]
+        null_value_stats = self.train_df.isnull().sum(axis=0)
+        print('nul values ',null_value_stats[null_value_stats != 0])
 
         # As we cat see, **`Age`**, **`Cabin`** and **`Embarked`** indeed have some missing values,
         # so let's fill them with some number way out of their distributions -
@@ -98,8 +101,8 @@ class catboostTask(HTask):
         self.test_df.fillna(-999, inplace=True)
 
         # Now let's separate features and label variable:
-        self.X = train_df.drop('Survived', axis=1)
-        self.y = train_df.Survived
+        self.X = self.train_df.drop('Survived', axis=1)
+        self.y = self.train_df.Survived
 
         # Pay attention that our features are of differnt types - some of them are numeric, some are categorical,
         # and some are even just strings, which normally should be handled in some specific way
@@ -139,7 +142,6 @@ class catboostTask(HTask):
                        plot=False);
 
     # endregion
-
     # region 2.2 Model Cross-Validation
     def _model_cross_validation(self):
         self.cv_data = cv(Pool(self.X, self.y, cat_features=self.categorical_features_indices),

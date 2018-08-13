@@ -12,8 +12,17 @@ app.get('/', function(req, res){
 io.on('connection', function(socket){
   console.log('a user connected');
     socket.on('control-message', function(msg){
-      console.log('message: ' + msg);
-      io.emit('control-message', msg);
+      console.log('control message: ' + msg);
+      if (msg == 'initialize') 
+        io.emit(msg,{1:'todo : input data here '});
+      else
+        io.emit(msg); 
+    });
+    socket.on('initialized', function(msg){
+      console.log('algorithm message: ' + JSON.stringify(msg));
+    });
+    socket.on('done', function(msg,data){
+      console.log('algorithm message: ' + JSON.stringify(msg) + ' data: ' + JSON.stringify(data));
     });
     socket.on('disconnect', function(){
       console.log('user disconnected');

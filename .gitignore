@@ -108,3 +108,4 @@ venv.bak/
 # project spacific
 model_depth*
 catboost_info/
+hkube_simulator/node_modules/
